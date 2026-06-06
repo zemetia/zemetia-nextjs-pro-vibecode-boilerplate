@@ -17,6 +17,7 @@ Cross-linked reference for AI agents. Every path is a backlink. Read this file f
 | [SERVICES.md](./SERVICES.md) | ApiClient, interceptors, domain services, Zod schemas | API calls, validation, error handling |
 | [STATE.md](./STATE.md) | Zustand stores, cookie persistence, storage decision tree | Global state, persistence |
 | [SEO_GEO_LLM.md](./SEO_GEO_LLM.md) | SEO metadata, GEO structured data, sitemap, robots, LLMs.txt | Any public page — read before writing metadata or content |
+| [KNOWLEDGE.md](./KNOWLEDGE.md) | Rules for THIS.md + LEARN.md — the learning system | Before every task; after every correction or new insight |
 
 ---
 

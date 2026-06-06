@@ -1,5 +1,20 @@
 # Next.js Template
 
+## CRITICAL — Read Before Anything Else
+
+> These two files are the most important context in this project. Read them at the start of every task, before touching any blueprint section or code.
+
+| File | Purpose |
+|---|---|
+| [docs/knowledge/THIS.md](docs/knowledge/THIS.md) | Developer style, project identity, do's & don'ts, ongoing insights |
+| [docs/knowledge/LEARN.md](docs/knowledge/LEARN.md) | Past mistakes and corrections — read to avoid repeating them |
+
+**Writing rules:**
+- After any task where a new insight or preference is discovered → append to `THIS.md`
+- When the user corrects the AI, or the AI self-identifies a mistake → append to `LEARN.md` immediately using format: `[YYYY-MM-DD] - [problem] - [solution] - [lesson]`
+
+---
+
 > **AI agents — before planning any fix or feature:** identify which blueprint sections cover the affected area, read them first, then plan. Do not guess at patterns — the blueprint is the source of truth.
 
 ## Blueprint
@@ -17,6 +32,7 @@
 | i18n + routing + translations | [docs/blueprint/I18N.md](docs/blueprint/I18N.md) |
 | TypeScript + ESLint + anti-patterns | [docs/blueprint/BEST_PRACTICE.md](docs/blueprint/BEST_PRACTICE.md) |
 | **SEO + GEO + LLMs.txt** | [docs/blueprint/SEO_GEO_LLM.md](docs/blueprint/SEO_GEO_LLM.md) |
+| **Knowledge system rules** | [docs/blueprint/KNOWLEDGE.md](docs/blueprint/KNOWLEDGE.md) |
 
 ## Stack snapshot
 

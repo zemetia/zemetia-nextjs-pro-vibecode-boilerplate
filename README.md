@@ -65,7 +65,12 @@ docs/blueprint/
 ├── SERVICES.md        — ApiClient, interceptors, domain services, Zod schemas
 ├── STATE.md           — Zustand stores, cookie persistence, storage decision tree
 ├── I18N.md            — next-intl routing, translations, navigation, static gen
-└── BEST_PRACTICE.md   — TypeScript constraints, ESLint rules, naming, anti-patterns
+├── BEST_PRACTICE.md   — TypeScript constraints, ESLint rules, naming, anti-patterns
+└── KNOWLEDGE.md       — rules for the learning system (THIS.md + LEARN.md)
+
+docs/knowledge/
+├── THIS.md            — developer profile, project identity, do's & don'ts, insights
+└── LEARN.md           — correction log: past mistakes and lessons
 ```
 
 Each blueprint file is structured for fast AI consumption: tables over prose, explicit constraints, canonical import paths, and worked examples. The AI does not need to guess — every decision is documented.
@@ -74,11 +79,13 @@ Each blueprint file is structured for fast AI consumption: tables over prose, ex
 
 `CLAUDE.md` (at the project root) is the entry point that Claude Code reads at the start of every session. It is not documentation for humans — it is an **engineering contract for AI agents**.
 
-It does three things:
+It does four things:
 
-1. **Points to the Blueprint** — before planning any fix or feature, the AI must read the relevant blueprint sections. This prevents pattern invention from scratch.
+1. **Loads the Knowledge System first** — before any blueprint or code, the AI reads `docs/knowledge/THIS.md` (developer style, do's & don'ts) and `docs/knowledge/LEARN.md` (past mistakes and corrections). This is the highest-priority context layer.
 
-2. **States the non-negotiables** — a short, scannable list of hard rules that can never be violated, regardless of context:
+2. **Points to the Blueprint** — before planning any fix or feature, the AI must read the relevant blueprint sections. This prevents pattern invention from scratch.
+
+3. **States the non-negotiables** — a short, scannable list of hard rules that can never be violated, regardless of context:
    - Navigation always via `@/i18n/navigation`, never `next/navigation`
    - Server data via TanStack Query only — no `useState` for API responses
    - Colors via design tokens only — no raw hex, no Tailwind color utilities
@@ -87,9 +94,22 @@ It does three things:
    - Services are plain objects — components never call `fetch` or `apiClient` directly
    - `middleware.ts` is deprecated — all request logic goes in `proxy.ts`
 
-3. **Gives the stack snapshot** — versions in one place so the AI picks the right API surface without hallucinating deprecated patterns.
+4. **Gives the stack snapshot** — versions in one place so the AI picks the right API surface without hallucinating deprecated patterns.
 
 The result: Claude behaves like a developer who has already read every ADR, knows every convention, and asks clarifying questions when something is genuinely ambiguous — instead of making it up.
+
+### The Learning System
+
+The `docs/knowledge/` directory is a **living memory** that grows with the project. Unlike the blueprint (which describes what the system should be), knowledge files capture what the AI has learned about *this developer* and *this project* through real collaboration.
+
+| File | Written when |
+|---|---|
+| `THIS.md` | New insight about developer style, preferences, or project patterns is discovered |
+| `LEARN.md` | User corrects the AI, or the AI self-identifies a deviation from best practice |
+
+`LEARN.md` format: `[YYYY-MM-DD] - [problem] - [solution] - [lesson]`
+
+Over time these files make the AI progressively more calibrated to how this team works — not just what the rules are, but why they matter and what failure modes to watch for.
 
 ---
 
@@ -192,6 +212,7 @@ messages/
 
 proxy.ts                  # Request intercept entry (Next.js 16)
 docs/blueprint/           # AI agent reference system
+docs/knowledge/           # Living memory — developer style & correction log
 ```
 
 ---
@@ -201,9 +222,12 @@ docs/blueprint/           # AI agent reference system
 If you are an AI agent working on this codebase:
 
 1. Read `CLAUDE.md` — it is your contract.
-2. Before touching any file, identify which blueprint section covers it.
-3. Read that section. Then plan. Never guess at patterns.
-4. The hard constraints in `INDEX.md` are non-negotiable — they exist because of real incidents and deliberate architectural decisions, not style preferences.
+2. Read `docs/knowledge/THIS.md` — developer profile, do's & don'ts, accumulated insights.
+3. Read `docs/knowledge/LEARN.md` — past mistakes. Do not repeat them.
+4. Before touching any file, identify which blueprint section covers it.
+5. Read that section. Then plan. Never guess at patterns.
+6. The hard constraints in `INDEX.md` are non-negotiable — they exist because of real incidents and deliberate architectural decisions, not style preferences.
+7. After every task: if you discovered something new about how this developer works, append it to `THIS.md`. If the user corrected you or you made a mistake, append it to `LEARN.md`.
 
 ---
 
