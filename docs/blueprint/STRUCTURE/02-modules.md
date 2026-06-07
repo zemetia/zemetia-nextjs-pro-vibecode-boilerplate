@@ -108,7 +108,27 @@ toast.error('msg');      // direct sonner fn — outside components
 | Path | Export |
 |---|---|
 | [src/types/common.ts](../../../src/types/common.ts) | `Nullable<T>`, `Maybe<T>`, `Prettify<T>`, `PaginatedResponse<T>`, `ApiResponse<T>` |
-| [src/types/index.ts](../../../src/types/index.ts) | barrel |
+| [src/types/index.ts](../../../src/types/index.ts) | barrel — re-exports `common.ts` only |
+
+### src/types/dtos/
+
+Raw API response shapes. Field names mirror the server JSON exactly (snake_case, ISO date strings, no derived data). Consumed only by services — never by pages or components.
+
+| Path | Export |
+|---|---|
+| [src/types/dtos/admin.dto.ts](../../../src/types/dtos/admin.dto.ts) | `AdminDTO`, `AdminListDTO` |
+| [src/types/dtos/index.ts](../../../src/types/dtos/index.ts) | barrel |
+
+### src/types/value-objects/
+
+Client-ready, display-optimized shapes. Produced by services after transforming DTOs — camelCase keys, formatted strings, derived booleans, no nullables. Consumed by services and pages/components.
+
+| Path | Export |
+|---|---|
+| [src/types/value-objects/admin.vo.ts](../../../src/types/value-objects/admin.vo.ts) | `AdminVO`, `AdminListVO` |
+| [src/types/value-objects/index.ts](../../../src/types/value-objects/index.ts) | barrel |
+
+See [ARCHITECTURE/05-dto-vo.md](../ARCHITECTURE/05-dto-vo.md) for the full data-flow and transformation pattern.
 
 ---
 

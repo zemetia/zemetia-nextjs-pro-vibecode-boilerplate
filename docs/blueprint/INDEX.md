@@ -70,6 +70,10 @@ import { toast }                       from '@/hooks';   // direct sonner fn
 import { apiClient, ApiError }         from '@/services';
 import { healthService }               from '@/services';
 
+// Types — DTOs (service layer only) + VOs (services + pages)
+import type { AdminDTO, AdminListDTO } from '@/types/dtos';
+import type { AdminVO, AdminListVO }   from '@/types/value-objects';
+
 // i18n — NEVER import from 'next/navigation'
 import { Link, useRouter, usePathname, redirect } from '@/i18n/navigation';
 import { routing }                     from '@/i18n/routing';
@@ -116,9 +120,12 @@ import { PostHogProvider }             from '@/providers';
 
 ### New Domain Service
 
-- [ ] [src/services/<domain>.service.ts](../../src/services/) — plain object, typed methods
+- [ ] [src/types/dtos/\<domain\>.dto.ts](../../src/types/dtos/) — raw API shape (snake_case, ISO strings)
+- [ ] [src/types/value-objects/\<domain\>.vo.ts](../../src/types/value-objects/) — client-ready shape (camelCase, formatted, derived)
+- [ ] Add both to their respective barrel `index.ts`
+- [ ] [src/services/\<domain\>.service.ts](../../src/services/) — plain object; fetches DTO, returns VO
 - [ ] Add to [src/services/index.ts](../../src/services/index.ts)
-- [ ] Types in [src/services/types.ts](../../src/services/types.ts) or [src/types/common.ts](../../src/types/common.ts)
+- [ ] See [ARCHITECTURE/05-dto-vo.md](./ARCHITECTURE/05-dto-vo.md) for the full transformation pattern
 
 ### New Zustand Store
 
