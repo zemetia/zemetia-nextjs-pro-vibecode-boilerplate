@@ -38,7 +38,7 @@
 
 - Don't use `useState` for server data — TanStack Query only
 - Don't call `fetch` or `apiClient` directly in components — always go through services
-- Don't add `middleware.ts` — use `proxy.ts` + `src/proxy/` modules instead
+- Don't add root `proxy.ts` — use `src/middleware.ts` (export `middleware`) + `src/proxy/` modules instead
 - Don't write raw hex colors, oklch values, or Tailwind color utilities in components
 - Don't add error handling for impossible cases — only validate at system boundaries
 - Don't create README or documentation files unless explicitly asked

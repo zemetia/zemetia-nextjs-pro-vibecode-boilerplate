@@ -2,13 +2,13 @@ import createMiddleware from 'next-intl/middleware';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-import { routing } from './src/i18n/routing';
-import { applyRateLimit } from './src/proxy/rate-limit';
-import { applySecurityHeaders } from './src/proxy/security-headers';
+import { routing } from './i18n/routing';
+import { applyRateLimit } from './proxy/rate-limit';
+import { applySecurityHeaders } from './proxy/security-headers';
 
 const intlMiddleware = createMiddleware(routing);
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   // Rate limit — returns 429 early for /api/* if threshold exceeded
   const rateLimited = await applyRateLimit(request);
   if (rateLimited) return rateLimited;

@@ -24,7 +24,7 @@
 | Index + hard constraints + checklists | [docs/blueprint/INDEX.md](docs/blueprint/INDEX.md) |
 | Project structure + file locations | [docs/blueprint/STRUCTURE.md](docs/blueprint/STRUCTURE.md) |
 | Request lifecycle + integrations | [docs/blueprint/ARCHITECTURE.md](docs/blueprint/ARCHITECTURE.md) |
-| **Proxy (rate limit, security headers)** | [docs/blueprint/ARCHITECTURE/04-proxy.md](docs/blueprint/ARCHITECTURE/04-proxy.md) |
+| **Middleware/rate limit/security headers** | [docs/blueprint/ARCHITECTURE/04-proxy.md](docs/blueprint/ARCHITECTURE/04-proxy.md) |
 | Components + CVA + tests | [docs/blueprint/COMPONENTS.md](docs/blueprint/COMPONENTS.md) |
 | Design tokens + Tailwind v4 | [docs/blueprint/DESIGN_SYSTEM.md](docs/blueprint/DESIGN_SYSTEM.md) |
 | Services + API client + Zod | [docs/blueprint/SERVICES.md](docs/blueprint/SERVICES.md) |
@@ -46,6 +46,6 @@ Next.js 16 · TypeScript 6 (strict) · Tailwind v4 · next-intl v4 · TanStack Q
 - `npm run lint` must exit 0 (`--max-warnings 0`)
 - `'use client'` only when required (hook / event / browser API)
 - Services are plain objects — never call `fetch`/`apiClient` directly in components
-- `middleware.ts` is deprecated (Next.js 16) — all request intercept logic goes in `proxy.ts`; modules in `src/proxy/`
+- Request intercept logic goes in `src/middleware.ts` (export `middleware`); modules in `src/proxy/` — do NOT use root `proxy.ts` (known production/Windows bugs in Next.js 16)
 - Every public page must call `buildMetadata()` in `generateMetadata()` and render `<StructuredData>` — see `docs/blueprint/SEO_GEO_LLM.md`
 - All SEO/GEO/LLMs.txt content is driven by `src/config/site.ts` — edit that file, not the route handlers

@@ -1,4 +1,4 @@
-# Architecture — 04: Proxy
+# Architecture — 04: Middleware (Proxy Layer)
 
 ← [03 — Zod, shadcn, build](./03-zod-shadcn-build.md) | [ARCHITECTURE.md](../ARCHITECTURE.md) | [Blueprint INDEX](../INDEX.md)
 
@@ -6,11 +6,13 @@
 
 ## Overview
 
-`proxy.ts` is the Next.js 16 server-side intercept layer that runs **before** any route is rendered. It replaced `middleware.ts` in Next.js 16 — same capability, renamed to clarify its role as a network boundary in front of the app.
+`src/middleware.ts` is the Next.js server-side intercept layer that runs **before** any route is rendered. It sits at the network boundary in front of the app — handling rate limiting, security headers, and i18n locale routing.
 
-**Runtime:** Node.js (not Edge). Configured in `next.config.ts` implicitly.
+**Runtime:** Node.js (stable). Exports a named `middleware` function.
 
-> **Last-resort rule** — Next.js recommends using Proxy only when no other API achieves the goal. Authentication checks **must also** be performed inside Server Functions / Route Handlers — Proxy alone is not a sufficient auth boundary (see [Next.js Data Security guide](https://nextjs.org/docs/app/guides/data-security#authentication-and-authorization)).
+> **Why `src/middleware.ts` not `proxy.ts`** — Next.js 16 introduced `proxy.ts` as a rename of `middleware.ts`, but it has confirmed production-mode bugs (does not execute in `next start`), Windows 11 failures, and Cloudflare breakage. `middleware.ts` is the stable, reliable choice. See GitHub issues [#85711](https://github.com/vercel/next.js/issues/85711), [#85243](https://github.com/vercel/next.js/issues/85243), [#86122](https://github.com/vercel/next.js/issues/86122).
+
+> **Last-resort rule** — Use middleware only when no other API achieves the goal. Authentication checks **must also** be performed inside Server Functions / Route Handlers — middleware alone is not a sufficient auth boundary (see [Next.js Data Security guide](https://nextjs.org/docs/app/guides/data-security#authentication-and-authorization)).
 
 ---
 
@@ -20,7 +22,7 @@
 Browser Request
     │
     ▼
-proxy.ts  (Node.js — runs before route rendering)
+src/middleware.ts  (Node.js — runs before route rendering)
     │
     ├── applyRateLimit(request)
     │       /api/* only — sliding window 60 req/min per IP
@@ -45,7 +47,7 @@ proxy.ts  (Node.js — runs before route rendering)
 
 | File | Purpose |
 |---|---|
-| [`proxy.ts`](../../../proxy.ts) | Root entry — composes all proxy logic, exports `config.matcher` |
+| [`src/middleware.ts`](../../../src/middleware.ts) | Root entry — composes all intercept logic, exports `config.matcher` |
 | [`src/proxy/rate-limit.ts`](../../../src/proxy/rate-limit.ts) | Sliding window rate limiter for `/api/*` routes |
 | [`src/proxy/security-headers.ts`](../../../src/proxy/security-headers.ts) | Attaches security headers to every response |
 
@@ -61,7 +63,7 @@ applyRateLimit(request: NextRequest): Promise<NextResponse | null>
 
 Powered by **[next-limitr](https://github.com/Pallepadehat/next-limitr)**.
 
-`next-limitr` is a Route Handler HOF (`withRateLimit(config)(handler)`). In `proxy.ts` we adapt it by wrapping a noop handler — when the rate limit is hit, `next-limitr` fires our custom `handler` and returns 429 before the noop is ever called.
+`next-limitr` is a Route Handler HOF (`withRateLimit(config)(handler)`). In `middleware.ts` we adapt it by wrapping a noop handler — when the rate limit is hit, `next-limitr` fires our custom `handler` and returns 429 before the noop is ever called.
 
 | Detail | Value |
 |---|---|
@@ -118,7 +120,7 @@ applySecurityHeaders(response: NextResponse): NextResponse
 ## Matcher
 
 ```ts
-// proxy.ts
+// src/middleware.ts
 export const config = {
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)).*)',
@@ -126,21 +128,21 @@ export const config = {
 };
 ```
 
-Static assets (`_next/static`, `_next/image`, `favicon.ico`, images) are excluded. Unlike the old `middleware.ts`, `/api` routes are **included** so rate limiting applies.
+Static assets (`_next/static`, `_next/image`, `favicon.ico`, images) are excluded. `/api` routes are **included** so rate limiting applies.
 
 ---
 
-## Adding New Proxy Logic
+## Adding New Middleware Logic
 
 1. Create `src/proxy/<concern>.ts`
 2. Export a pure function: `apply<Concern>(request: NextRequest): Promise<NextResponse | null>` (async early-exit) or `apply<Concern>(response: NextResponse): NextResponse` (sync response mutation)
-3. Call it in `proxy.ts` — before `intlMiddleware` if it may short-circuit (return early), after if it only mutates headers
+3. Call it in `src/middleware.ts` — before `intlMiddleware` if it may short-circuit (return early), after if it only mutates headers
 
 ```ts
-// proxy.ts — example adding auth guard
-import { applyAuthGuard } from './src/proxy/auth-guard';
+// src/middleware.ts — example adding auth guard
+import { applyAuthGuard } from './proxy/auth-guard';
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const rateLimited = await applyRateLimit(request);
   if (rateLimited) return rateLimited;
 
@@ -161,31 +163,11 @@ export async function proxy(request: NextRequest) {
 
 | # | Rule |
 |---|---|
-| 1 | Never import React, components, or `'use client'` modules in proxy files |
-| 2 | Never call `apiClient` or `fetch` for slow data — proxy must be fast |
+| 1 | Never import React, components, or `'use client'` modules in middleware/proxy files |
+| 2 | Never call `apiClient` or `fetch` for slow data — middleware must be fast |
 | 3 | Rate limiter is in-memory — not suitable for multi-instance without KV replacement |
-| 4 | Auth logic in proxy is a first-line filter only — always re-verify inside Server Functions |
-| 5 | `middleware.ts` is deprecated in Next.js 16 — use `proxy.ts` exclusively |
-
----
-
-## Migration from `middleware.ts`
-
-Next.js 16 renamed the file convention. The automated codemod:
-
-```bash
-npx @next/codemod@canary middleware-to-proxy .
-```
-
-Manual diff:
-
-```diff
-- // middleware.ts
-+ // proxy.ts
-
-- export function middleware(request: NextRequest) {
-+ export function proxy(request: NextRequest) {
-```
+| 4 | Auth logic in middleware is a first-line filter only — always re-verify inside Server Functions |
+| 5 | Use `src/middleware.ts` — never root `proxy.ts` (known production/Windows bugs in Next.js 16) |
 
 ---
 

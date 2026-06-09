@@ -5,7 +5,7 @@ import type { NextRequest } from 'next/server';
 const LIMIT = 60;
 const WINDOW_MS = 60_000; // 1 minute
 
-// next-limitr is a Route Handler HOF. We adapt it for proxy.ts by wrapping a
+// next-limitr is a Route Handler HOF. We adapt it for middleware.ts by wrapping a
 // noop handler — the 429 path fires our custom `handler` before the noop runs.
 const limitedNoop = withRateLimit({
   limit: LIMIT,
