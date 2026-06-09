@@ -2,21 +2,18 @@
 
 import posthog from 'posthog-js';
 import { PostHogProvider as PHProvider } from 'posthog-js/react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { Suspense, useEffect } from 'react';
+
+import { usePathname } from '@/i18n/navigation';
 
 function PostHogPageView() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const locale = useLocale();
 
   useEffect(() => {
-    if (!pathname) return;
-    const url =
-      window.origin +
-      pathname +
-      (searchParams?.toString() ? `?${searchParams.toString()}` : '');
-    posthog.capture('$pageview', { $current_url: url });
-  }, [pathname, searchParams]);
+    posthog.capture('$pageview', { $current_url: window.location.href });
+  }, [pathname, locale]);
 
   return null;
 }

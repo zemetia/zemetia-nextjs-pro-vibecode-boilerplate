@@ -11,7 +11,7 @@
 | [src/i18n/routing.ts](../../../src/i18n/routing.ts) | `routing` — `defineRouting({ locales, defaultLocale, localePrefix })` |
 | [src/i18n/navigation.ts](../../../src/i18n/navigation.ts) | `Link`, `redirect`, `usePathname`, `useRouter`, `getPathname` |
 | [src/i18n/request.ts](../../../src/i18n/request.ts) | `getRequestConfig` — loads message JSON per locale per RSC render |
-| [middleware.ts](../../../middleware.ts) | `createMiddleware(routing)` — locale detection + redirect |
+| [proxy.ts](../../../proxy.ts) | `intlMiddleware(request)` — locale detection + redirect (via `proxy.ts`, NOT `middleware.ts`) |
 | [messages/](../../../messages/) | JSON translation files per locale |
 
 ---
@@ -22,30 +22,46 @@
 export const routing = defineRouting({
   locales: ['en', 'id'] as const,
   defaultLocale: 'en',
-  localePrefix: 'as-needed',
-  // default locale: /about (no prefix)
-  // other locales:  /id/about (prefixed)
+  localePrefix: 'always',
+  // every locale is always prefixed:
+  // /about        → redirects to /en/about
+  // /id/about     → serves Indonesian
 });
 
 export type Locale = (typeof routing.locales)[number];  // 'en' | 'id'
 ```
 
+### Why `localePrefix: 'always'` (not `'as-needed'`)
+
+| Mode | Default locale | Non-default | Effect |
+|---|---|---|---|
+| `'as-needed'` | `/about` (no prefix) | `/id/about` | `/*` is **not** redirected → inconsistent URLs, no locale in default paths |
+| `'always'` | `/en/about` | `/id/about` | `/*` → **always** redirects to `/{locale}/*` — consistent, no missing-locale URLs |
+
+**Always use `'always'`.** `'as-needed'` breaks the invariant that every route has a locale segment, which makes analytics, canonical URLs, and caching harder.
+
 ---
 
-## Middleware (middleware.ts)
+## Proxy Integration (proxy.ts)
+
+`intlMiddleware` (created from `createMiddleware(routing)`) runs inside `proxy.ts` — **not** in a `middleware.ts` file (that convention is deprecated in Next.js 16).
 
 ```ts
-import createMiddleware from 'next-intl/middleware';
-import { routing } from './src/i18n/routing';
+// proxy.ts — relevant excerpt
+const intlMiddleware = createMiddleware(routing);
 
-export default createMiddleware(routing);
-
-export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
-};
+export async function proxy(request: NextRequest) {
+  // ...rate limit, api guard...
+  return applySecurityHeaders(intlMiddleware(request));
+}
 ```
 
-Behavior: reads `Accept-Language` → sets locale cookie → redirects to locale-prefixed path for non-default locales.
+`intlMiddleware` behaviour:
+1. Reads `Accept-Language` header and locale cookie.
+2. Redirects un-prefixed paths to `/{locale}/*` (because `localePrefix: 'always'`).
+3. Prevents double-locale — `/en/en/about` can never be reached.
+
+See [04-proxy.md](../ARCHITECTURE/04-proxy.md) for the full proxy flow.
 
 ---
 

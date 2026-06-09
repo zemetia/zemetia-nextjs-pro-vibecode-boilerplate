@@ -4,9 +4,9 @@
 
 ---
 
-## Navigation — CRITICAL RULE
+## Navigation — CRITICAL RULES
 
-**Never import from `next/navigation`.** Always use [src/i18n/navigation.ts](../../../src/i18n/navigation.ts).
+### 1. Always import from `@/i18n/navigation`, never `next/navigation`
 
 ```ts
 // src/i18n/navigation.ts
@@ -18,13 +18,54 @@ export const { Link, redirect, usePathname, useRouter, getPathname } =
 // ✅
 import { Link, useRouter, usePathname } from '@/i18n/navigation';
 
-<Link href="/about">About</Link>       // renders /id/about for Indonesian users
+<Link href="/about">About</Link>       // renders /en/about or /id/about automatically
 router.push('/dashboard');             // locale-prefixed automatically
-const path = usePathname();            // strips locale prefix: /id/about → /about
+const path = usePathname();            // strips locale prefix: /en/about → /about
 
 // ❌ next/navigation — no locale context
 import { Link } from 'next/link';
 import { useRouter } from 'next/navigation';
+```
+
+> **Exception:** `notFound()` from `next/navigation` is fine — it is not a navigation function and `createNavigation` does not export it.
+
+---
+
+### 2. Never put a locale prefix in `href`
+
+`Link` from `@/i18n/navigation` adds the locale prefix automatically based on the active locale.  
+Hardcoding the locale in `href` causes a **double-locale** path: `/en/en/about`.
+
+```tsx
+// ✅ — locale-agnostic path, prefix added automatically
+<Link href="/about">About</Link>          // → /en/about or /id/about
+
+// ❌ — double-locale bug
+<Link href="/en/about">About</Link>       // → /en/en/about
+<Link href={`/${locale}/about`}>About</Link>  // → /en/en/about
+```
+
+Same rule applies to `router.push`, `router.replace`, `redirect`, and any `href` / `action` attribute anywhere in the codebase.
+
+---
+
+### 3. Analytics / providers must not use `next/navigation` either
+
+Even non-routing uses (`usePathname` for PostHog, Sentry breadcrumbs, etc.) must use `@/i18n/navigation`.  
+Use `useLocale()` from `next-intl` alongside to detect locale changes.  
+Use `window.location.href` inside `useEffect` to capture the full locale-prefixed URL.
+
+```tsx
+// ✅ — PostHog pageview pattern
+import { usePathname } from '@/i18n/navigation';
+import { useLocale } from 'next-intl';
+
+const pathname = usePathname();  // /about (no prefix) — triggers on path change
+const locale   = useLocale();    // en | id — triggers on locale change
+
+useEffect(() => {
+  posthog.capture('$pageview', { $current_url: window.location.href });
+}, [pathname, locale]);
 ```
 
 ---
@@ -91,7 +132,7 @@ t('items', { count: 3 })  // "3 items"
 |---|---|
 | 1 | Add locale string to `locales` array in [src/i18n/routing.ts](../../../src/i18n/routing.ts) |
 | 2 | Create `messages/<locale>/common.json`, `navigation.json`, `home.json` |
-| 3 | Done — middleware and `generateStaticParams` auto-handle the rest |
+| 3 | Done — `intlMiddleware` in `proxy.ts` and `generateStaticParams` auto-handle the rest |
 
 ---
 
